@@ -1,35 +1,53 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useQuery } from "@tanstack/react-query";
+import "./App.css";
+import axios from "axios";
+import { FormEvent, useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  const {
+    data: users,
+    isLoading,
+  } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => axios.get(`/users?email=${email}`),
+    refetchOnWindowFocus: false
+  });
+
+  const handleSubmit = (evt: FormEvent<HTMLFormElement>) => {
+    evt.preventDefault();
+
+    const form = evt.target as HTMLFormElement;
+    const email: string = form.email;
+    const phoneNumber: string = form.phoneNumber;
+  };
 
   return (
-    <>
+    <form onSubmit={handleSubmit}>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          autoComplete="email"
+          required
+        />
+        <input
+          type="number"
+          name="phone-number"
+          autoComplete="off"
+          placeholder="phone number"
+          required
+        />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? "Loading..." : "Search users"}
+      </button>
+    </form>
+  );
 }
 
-export default App
+export default App;
