@@ -1,8 +1,8 @@
 import express, { Express, Request, Response } from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import userData from "./users.json";
-import { User } from "./types";
+import { searchUsers } from "./controllers/users";
+import { validateUserSearch } from "./validators/users";
 
 dotenv.config();
 
@@ -19,7 +19,7 @@ app.use(
 
 let timeout: ReturnType<typeof setTimeout>;
 
-app.get("/api/users", (req: Request, res: Response) => {
+app.get("/api/users", validateUserSearch, (req: Request, res: Response) => {
   const { email, number } = req.query;
 
   // cancel previous request
@@ -36,15 +36,6 @@ app.get("/api/users", (req: Request, res: Response) => {
     }
   }, 5000);
 });
-
-async function searchUsers(email: string, number: string) {
-  let users = userData.filter((user: User) => user.email === email);
-  if (number) {
-    users = users.filter((user: User) => user.number === number);
-  }
-
-  return users;
-}
 
 app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
