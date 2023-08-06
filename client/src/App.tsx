@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+const api = axios.create();
 import { useForm, SubmitHandler } from "react-hook-form";
 import Input from "react-input-mask";
 
@@ -73,15 +74,31 @@ function App() {
   );
 }
 
+const { CancelToken } = axios;
+let source = CancelToken.source();
+
 const searchUsers = async (formData: Inputs): Promise<User[]> => {
   let url = `http://localhost:8000/api/users?email=${formData.email}`;
   if (formData.number) {
     url += `&number=${formData.number}`;
   }
 
-  const response = await axios.get(url);
+  source.cancel();
+  source = CancelToken.source();
 
-  return response.data;
+  try {
+    const response = await api.get(url, { cancelToken: source.token });
+
+    return response.data;
+  } catch (error) {
+    if (axios.isCancel(error)) {
+      console.log("Request was cancelled");
+    } else {
+      console.error("Request failed", error);
+    }
+
+    return [];
+  }
 };
 
 export default App;
