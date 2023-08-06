@@ -1,26 +1,15 @@
-import React from "react";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useForm, SubmitHandler } from "react-hook-form";
 import Input from "react-input-mask";
 
 import "./App.css";
+import { User } from "./types";
 
 interface Inputs {
   email: string;
-  phone: string;
+  number?: string;
 }
-
-const searchUsers = async (formData: Inputs) => {
-  let url = `/api/users?email=${formData.email}`;
-  if (formData.phone) {
-    url += `&phone=${formData.phone}`;
-  }
-
-  const response = await axios.get(url);
-
-  return response.data();
-};
 
 function App() {
   const {
@@ -30,46 +19,69 @@ function App() {
   } = useForm<Inputs>();
 
   const mutation = useMutation(searchUsers);
+  const { data: users, isLoading, isError } = mutation;
 
   const handleSearch: SubmitHandler<Inputs> = (formData) => {
     mutation.mutate(formData);
   };
 
   return (
-    <form action="/api/users" onSubmit={handleSubmit(handleSearch)}>
-      <div>
-        <label>
-          Email{" "}
-          <input
-            type="email"
-            {...register("email", {
-              required: "Email address is required",
-              pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-            })}
-          />
-        </label>
+    <>
+      <form action="/api/users" onSubmit={handleSubmit(handleSearch)}>
+        <div>
+          <label>
+            Email{" "}
+            <input
+              type="email"
+              {...register("email", {
+                required: "Email address is required",
+                pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              })}
+            />
+          </label>
+          {errors.email && <p role="alert">{errors.email.message}</p>}
+        </div>
+        <div>
+          <label>
+            Number{" "}
+            <Input
+              mask="99-99-99"
+              {...register("number", { pattern: /^\d{2}-\d{2}-\d{2}$/ })}
+            />
+          </label>
+          {errors.number && (
+            <p role="alert">Number must be in the format ##-##-##</p>
+          )}
+        </div>
+        {isError ? <p role="alert">Error occured</p> : null}
+        <button type="submit">Search users</button>
+      </form>
 
-        {errors.email && <p role="alert">{errors.email.message}</p>}
-      </div>
+      {isLoading && <p>"Loading..."</p>}
+      {users?.length === 0 && <p>No users found</p>}
+      {users?.length ? <h2>Users</h2> : null}
 
-      <div>
-        <label>
-          Phone{" "}
-          <Input
-            mask="99-99-99"
-            {...register("phone", { pattern: /^\d{2}-\d{2}-\d{2}$/ })}
-          />
-        </label>
-        {errors.phone && (
-          <p role="alert">Phone must be in the format ##-##-##</p>
-        )}
-      </div>
-
-      <button type="submit" disabled={mutation.isLoading}>
-        {mutation.isLoading ? "Loading..." : "Search users"}
-      </button>
-    </form>
+      <ul>
+        {users?.map((user, i) => (
+          <div key={i} style={{ marginBottom: "16px" }}>
+            <div>Email: {user.email}</div>
+            <div>Number: {user.number}</div>
+          </div>
+        ))}
+      </ul>
+    </>
   );
 }
+
+const searchUsers = async (formData: Inputs): Promise<User[]> => {
+  let url = `http://localhost:8000/api/users?email=${formData.email}`;
+  if (formData.number) {
+    url += `&number=${formData.number}`;
+  }
+
+  const response = await axios.get(url);
+
+  return response.data;
+};
 
 export default App;
